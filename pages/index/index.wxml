@@ -1,0 +1,39 @@
+<!--index.wxml-->
+<view class="container">
+  <!-- 用户登录区域 - 右上角 -->
+  <view class="user-area">
+    <block wx:if="{{isLoggedIn}}">
+      <view class="user-info" bindtap="onLogoutTap">
+        <text class="user-nickname">{{userInfo.nickName || '未设置昵称'}}</text>
+        <image class="user-avatar" src="{{userInfo.avatarUrl}}" mode="aspectFill" alt="{{userInfo.nickName + '的头像'}}"></image>
+      </view>
+    </block>
+    <block wx:else>
+      <button class="login-btn" bindtap="onLoginTap">点击登录</button>
+    </block>
+  </view>
+
+  <!-- 序列输入区域 - 页面中心 -->
+  <view class="input-area">
+    <view class="input-title">
+      <text class="title-cn">请输入序列</text>
+      <text class="title-en">Please input RNA sequence</text>
+    </view>
+    <textarea
+      class="sequence-input"
+      placeholder="请在此处粘贴RNA序列..."
+      value="{{rnaSequence}}"
+      bindinput="onSequenceInput"
+      maxlength="-1"
+    ></textarea>
+    <view class="input-counter">
+      <text class="counter-cn">序列长度：{{rnaSequence.length}}</text>
+      <text class="counter-en">RNA Length: {{rnaSequence.length}}</text>
+    </view>
+  </view>
+
+  <!-- 提交按钮区域 -->
+  <view class="submit-area">
+    <button class="submit-btn" type="primary" bindtap="onSubmitTap">生成可视化</button>
+  </view>
+</view>
