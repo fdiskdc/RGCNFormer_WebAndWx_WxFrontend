@@ -1,12 +1,13 @@
 {
   "pages": [
     "pages/index/index",
+    "pages/results/results",
     "pages/webview/index",
     "pages/logs/logs"
   ],
   "window": {
     "navigationBarTextStyle": "black",
-    "navigationBarTitleText": "RNA可视化",
+    "navigationBarTitleText": "RNA Sequence Analysis",
     "navigationBarBackgroundColor": "#ffffff"
   },
   "style": "v2",

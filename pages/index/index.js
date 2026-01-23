@@ -10,9 +10,12 @@ Page({
     isLogging: false,
     userInfo: {
       avatarUrl: defaultAvatarUrl,
-      nickName: '',
+      nickname: '',
     },
-    rnaSequence: 'TCAGGAGTTCGAGACCAGCCTGATCAACATGACGAAACCCTATCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCATGCGCCTGTAGTCTCAGCTACTTGGGAGGCTGAAGCAGGAGAATCGTTTGAACCCAGGAGGCAGAGGTTGCAGTGAGCCGAGATCGTGCCACTGCACTCCAGCCTGGGTGACACAGCGAGACTCTGTCTCAAAAAAATAAAAATAAAAAAATAAATAAATAACCTTTAATTTAGTGAGACTTCATATAGAATTGTTTTAATGTTTAATATAGACCATTTGTTTTAGGTGAATTTAACAATTTCATACTGTGATTAAGATTAATTTCTTTTTCTGACTTCTACCAGAAAGCAGGAATTATGTTTCAAATGGACAATCATTTACCAAACCTTGTTAATCTGAATGAAGATCCACAACTATCTGAGATGCTGCTATATATGATAAAAGAAGGAACAACTACAGTTGGAAAGTATAAACCAAACTCAAGCCATGATATTCAGTTATCTGGGGTGCTGATTGCTGATGATCATTGGTATGTTAATCCTCTAAAAAAAAAGAAAAGGCACCTGTTCTATATCTTGATAACATGTGGTTTCCTTCATATGGCATATTCGTTGATACTGATCGTTTGGTAGAATTCTTCAAACCCATTGTTTAGTCAGGAAAAACATACATTCTGAGTGTGTTATAAGGATGATAGGTCAGTTACTCTCAATATAAAGTACAGTGTAATGCTCTCTCTGTTTTTGTTTTGGCATACTTGATCTGTTGATTGAAGAATAATTTATTTTCTTGCAATTATAATGATGCACATGCAAGTAAACTATCTATCTTACATAACAGAATTTTTGGTTGGATTGACCAATTTAAAAATGTTACTTTATGTGAATTTTGTTCATATGAATGGAATACTTGTATATATTGTTGGAATGATAGCGTATGTAAACTTTTTTGACTCTGCATTGTGTTTCCAAGATTTGT',
+    rnaSequences: [
+      { value: 'TCAGGAGTTCGAGACCAGCCTGATCAACATGACGAAACCCTATCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCATGCGCCTGTAGTCTCAGCTACTTGGGAGGCTGAAGCAGGAGAATCGTTTGAACCCAGGAGGCAGAGGTTGCAGTGAGCCGAGATCGTGCCACTGCACTCCAGCCTGGGTGACACAGCGAGACTCTGTCTCAAAAAAATAAAAATAAAAAAATAAATAAATAACCTTTAATTTAGTGAGACTTCATATAGAATTGTTTTAATGTTTAATATAGACCATTTGTTTTAGGTGAATTTAACAATTTCATACTGTGATTAAGATTAATTTCTTTTTCTGACTTCTACCAGAAAGCAGGAATTATGTTTCAAATGGACAATCATTTACCAAACCTTGTTAATCTGAATGAAGATCCACAACTATCTGAGATGCTGCTATATATGATAAAAGAAGGAACAACTACAGTTGGAAAGTATAAACCAAACTCAAGCCATGATATTCAGTTATCTGGGGTGCTGATTGCTGATGATCATTGGTATGTTAATCCTCTAAAAAAAAAGAAAAGGCACCTGTTCTATATCTTGATAACATGTGGTTTCCTTCATATGGCATATTCGTTGATACTGATCGTTTGGTAGAATTCTTCAAACCCATTGTTTAGTCAGGAAAAACATACATTCTGAGTGTGTTATAAGGATGATAGGTCAGTTACTCTCAATATAAAGTACAGTGTAATGCTCTCTCTGTTTTTGTTTTGGCATACTTGATCTGTTGATTGAAGAATAATTTATTTTCTTGCAATTATAATGATGCACATGCAAGTAAACTATCTATCTTACATAACAGAATTTTTGGTTGGATTGACCAATTTAAAAATGTTACTTTATGTGAATTTTGTTCATATGAATGGAATACTTGTATATATTGTTGGAATGATAGCGTATGTAAACTTTTTTGACTCTGCATTGTGTTTCCAAGATTTGT' }
+    ],
+    focusedIndex: 0,  // 当前聚焦的输入框索引
     canIUseGetUserProfile: wx.canIUse('getUserProfile'),
   },
 
@@ -60,14 +63,14 @@ Page({
         isLoggedIn: false,
         userInfo: {
           avatarUrl: defaultAvatarUrl,
-          nickName: '',
+          nickname: '',
         },
       });
     }
   },
 
   /**
-   * 用户登录 - 使用 wx.getUserProfile 弹出授权窗口
+   * 用户登录 - 调用后端 API
    */
   onLoginTap() {
     // 防止重复点击
@@ -78,55 +81,122 @@ Page({
     // 设置登录中状态
     this.setData({ isLogging: true });
 
-    console.log('onLoginTap 被调用');
-    console.log('canIUseGetUserProfile:', this.data.canIUseGetUserProfile);
-
-    if (!this.data.canIUseGetUserProfile) {
-      this.setData({ isLogging: false });
-      wx.showToast({
-        title: '请使用2.10.4及以上版本基础库',
-        icon: 'none',
-      });
-      return;
-    }
-
+    // 先获取用户授权信息（昵称和头像）
     wx.getUserProfile({
       desc: '用于完善用户资料',
-      success: (res) => {
-        console.log('getUserProfile 成功:', res);
-        const userInfo = res.userInfo;
+      success: (profileRes) => {
+        console.log('getUserProfile 成功:', profileRes);
+        console.log('userInfo.nickName:', profileRes.userInfo?.nickName);
+        console.log('userInfo.avatarUrl:', profileRes.userInfo?.avatarUrl);
 
-        // 获取登录 code，用于换取 openid
+        const userProfile = profileRes.userInfo;
+
+        wx.showLoading({
+          title: '登录中...',
+        });
+
+        // 获取微信登录 code
         wx.login({
           success: (loginRes) => {
             if (loginRes.code) {
               console.log('wx.login 成功，code:', loginRes.code);
 
-              // 调用后端接口获取 openid
-              this.getOpenId(loginRes.code, userInfo);
+              // 调用后端登录接口，同时发送用户信息
+              const loginUrl = `${API_BASE_URL}/api/v1/wx/login`;
+              console.log('登录请求URL:', loginUrl);
+              console.log('API_BASE_URL:', API_BASE_URL);
+
+              wx.request({
+                url: loginUrl,
+                method: 'POST',
+                header: {
+                  'Content-Type': 'application/json',
+                },
+                data: {
+                  loginCode: loginRes.code,
+                  nickname: userProfile.nickName,
+                  avatarUrl: userProfile.avatarUrl,
+                },
+                success: (res) => {
+                  wx.hideLoading();
+
+                  if (res.statusCode === 200 && res.data.code === 0) {
+                    // 后端返回的数据格式: { code: 0, openid: xxx, data: { nickname, avatarUrl }, message: xxx }
+                    const backendData = res.data.data || {};
+
+                    // 构造用户信息对象，优先使用后端返回的数据
+                    const userInfo = {
+                      nickname: backendData.nickname || userProfile.nickName,
+                      avatarUrl: backendData.avatarUrl || userProfile.avatarUrl,
+                      openid: res.data.openid,
+                    };
+
+                    // 保存 loginCode 到本地
+                    wx.setStorageSync('loginCode', loginRes.code);
+
+                    // 保存用户信息到本地缓存
+                    wx.setStorageSync('userInfo', userInfo);
+
+                    // 更新页面状态
+                    this.setData({
+                      isLoggedIn: true,
+                      userInfo: userInfo,
+                      isLogging: false,
+                    });
+
+                    wx.showToast({
+                      title: '登录成功',
+                      icon: 'success',
+                    });
+
+                    console.log('登录成功，用户信息:', userInfo);
+                  } else {
+                    this.setData({ isLogging: false });
+                    wx.showToast({
+                      title: res.data?.error || '登录失败',
+                      icon: 'none',
+                    });
+                  }
+                },
+                fail: (err) => {
+                  wx.hideLoading();
+                  this.setData({ isLogging: false });
+                  console.error('后端登录请求失败:', err);
+                  wx.showToast({
+                    title: '网络错误，请重试',
+                    icon: 'none',
+                  });
+                },
+              });
             } else {
-              console.error('wx.login 获取 code 失败');
-              // 即使获取 openid 失败，也保存用户信息
-              this.saveUserInfo(userInfo);
+              wx.hideLoading();
+              this.setData({ isLogging: false });
+              wx.showToast({
+                title: '获取登录凭证失败',
+                icon: 'none',
+              });
             }
           },
           fail: (err) => {
+            wx.hideLoading();
+            this.setData({ isLogging: false });
             console.error('wx.login 失败:', err);
-            // 即使获取 openid 失败，也保存用户信息
-            this.saveUserInfo(userInfo);
+            wx.showToast({
+              title: '登录失败，请重试',
+              icon: 'none',
+            });
           },
         });
       },
       fail: (err) => {
         console.error('getUserProfile 失败:', err);
-        console.error('错误详情:', JSON.stringify(err));
         this.setData({ isLogging: false });
 
         // 检查是否是用户拒绝授权
         if (err.errMsg && err.errMsg.includes('getUserProfile:fail')) {
           wx.showModal({
             title: '授权失败',
-            content: '您拒绝了授权，无法使用此功能',
+            content: '您拒绝了授权，无法获取昵称和头像',
             showCancel: false,
           });
         } else {
@@ -135,98 +205,6 @@ Page({
             icon: 'none',
           });
         }
-      },
-    });
-  },
-
-  /**
-   * 调用后端获取 openid
-   */
-  getOpenId(code, userInfo) {
-    wx.request({
-      url: `${API_BASE_URL}/api/v1/get-openid`,
-      method: 'POST',
-      data: {
-        code: code,
-      },
-      success: (res) => {
-        console.log('获取 openid 响应:', res);
-
-        if (res.statusCode === 200 && res.data.openid) {
-          // 保存 openid
-          wx.setStorageSync('openid', res.data.openid);
-          console.log('openid 保存成功:', res.data.openid);
-
-          // 将 openid 添加到 userInfo 中
-          userInfo.openid = res.data.openid;
-        } else {
-          console.warn('后端未返回 openid');
-        }
-
-        // 保存用户信息
-        this.saveUserInfo(userInfo);
-      },
-      fail: (err) => {
-        console.error('获取 openid 失败:', err);
-        // 即使获取 openid 失败，也保存用户信息
-        this.saveUserInfo(userInfo);
-      },
-    });
-  },
-
-  /**
-   * 保存用户信息并更新页面状态
-   */
-  saveUserInfo(userInfo) {
-    console.log('保存用户信息:', userInfo);
-
-    // 保存用户信息到本地缓存
-    wx.setStorageSync('userInfo', userInfo);
-
-    // 更新页面状态
-    this.setData({
-      isLoggedIn: true,
-      userInfo: userInfo,
-      isLogging: false,
-    });
-
-    wx.showToast({
-      title: '登录成功',
-      icon: 'success',
-    });
-  },
-
-  /**
-   * 调用后端获取 openid
-   */
-  getOpenId(code, userInfo) {
-    wx.request({
-      url: `${API_BASE_URL}/api/v1/get-openid`,
-      method: 'POST',
-      data: {
-        code: code,
-      },
-      success: (res) => {
-        console.log('获取 openid 响应:', res);
-
-        if (res.statusCode === 200 && res.data.openid) {
-          // 保存 openid
-          wx.setStorageSync('openid', res.data.openid);
-          console.log('openid 保存成功:', res.data.openid);
-
-          // 将 openid 添加到 userInfo 中
-          userInfo.openid = res.data.openid;
-        } else {
-          console.warn('后端未返回 openid');
-        }
-
-        // 保存用户信息
-        this.saveUserInfo(userInfo);
-      },
-      fail: (err) => {
-        console.error('获取 openid 失败:', err);
-        // 即使获取 openid 失败，也保存用户信息
-        this.saveUserInfo(userInfo);
       },
     });
   },
@@ -264,7 +242,7 @@ Page({
         if (res.confirm) {
           // 清除本地缓存
           wx.removeStorageSync('userInfo');
-          wx.removeStorageSync('openid');
+          wx.removeStorageSync('loginCode');
           wx.removeStorageSync('token');
 
           // 更新页面状态
@@ -289,8 +267,67 @@ Page({
    * 序列输入框输入事件
    */
   onSequenceInput(e) {
+    const index = e.currentTarget.dataset.index;
+    const value = e.detail.value;
+    const rnaSequences = this.data.rnaSequences;
+    rnaSequences[index].value = value;
     this.setData({
-      rnaSequence: e.detail.value,
+      rnaSequences: rnaSequences,
+    });
+  },
+
+  /**
+   * 序列输入框聚焦事件
+   */
+  onSequenceFocus(e) {
+    const index = e.currentTarget.dataset.index;
+    this.setData({
+      focusedIndex: index,
+    });
+  },
+
+  /**
+   * 序列输入框失焦事件
+   */
+  onSequenceBlur(e) {
+    // 失焦时不做处理，保持当前聚焦状态
+  },
+
+  /**
+   * 添加序列输入框
+   */
+  onAddSequence() {
+    if (this.data.rnaSequences.length < 5) {
+      const rnaSequences = this.data.rnaSequences.concat({ value: '' });
+      const newIndex = rnaSequences.length - 1;
+      this.setData({
+        rnaSequences: rnaSequences,
+        focusedIndex: newIndex,  // 新增的输入框自动聚焦
+      });
+    }
+  },
+
+  /**
+   * 删除序列输入框
+   */
+  onDeleteSequence(e) {
+    const index = e.currentTarget.dataset.index;
+    const rnaSequences = this.data.rnaSequences.filter((_, i) => i !== index);
+
+    // 调整聚焦索引
+    let newFocusedIndex = this.data.focusedIndex;
+    if (index === this.data.focusedIndex) {
+      // 如果删除的是当前聚焦的输入框，聚焦到第一个
+      newFocusedIndex = 0;
+    } else if (index < this.data.focusedIndex) {
+      // 如果删除的输入框在当前聚焦的输入框之前，聚焦索引减1
+      newFocusedIndex = this.data.focusedIndex - 1;
+    }
+    // 如果删除的输入框在当前聚焦的输入框之后，聚焦索引不变
+
+    this.setData({
+      rnaSequences: rnaSequences,
+      focusedIndex: newFocusedIndex,
     });
   },
 
@@ -340,61 +377,105 @@ Page({
       return;
     }
 
-    // 检查序列输入
-    const sequence = this.data.rnaSequence.trim();
-    if (!sequence) {
+    // 检查至少有一个序列输入
+    const sequences = this.data.rnaSequences.map(seq => seq.value.trim()).filter(seq => seq);
+    if (sequences.length === 0) {
       wx.showToast({
-        title: '序列不能为空',
+        title: '请至少输入一条序列',
         icon: 'none',
       });
       return;
     }
 
-    // 验证序列合法性
-    const validation = this.validateRNASequence(sequence);
-    if (!validation.valid) {
-      wx.showToast({
-        title: validation.message,
-        icon: 'none',
-        duration: 2000,
-      });
-      return;
+    // 验证所有序列合法性
+    for (let i = 0; i < sequences.length; i++) {
+      const validation = this.validateRNASequence(sequences[i]);
+      if (!validation.valid) {
+        wx.showToast({
+          title: `序列${i + 1}: ${validation.message}`,
+          icon: 'none',
+          duration: 2000,
+        });
+        return;
+      }
     }
 
     // 开始提交流程
-    this.submitTask(sequence);
+    this.submitTask(sequences);
   },
 
   /**
    * 提交任务到后端
    */
-  submitTask(rnaSequence) {
+  submitTask(sequences) {
     console.log('%c========== submitTask 被调用 ==========', 'color: green; font-size: 14px; font-weight: bold;');
 
     // 生成前端 Job ID
     const jobId = this.generateJobId();
 
-    // 获取用户ID（优先使用 openid）
-    const openid = wx.getStorageSync('openid');
-    const userId = openid || this.data.userInfo.nickName || 'anonymous';
+    // 获取登录凭证 code
+    const loginCode = wx.getStorageSync('loginCode');
 
-    console.log('提交任务 - userId:', userId, 'jobId:', jobId);
+    // 调试日志
+    console.log('loginCode 从缓存获取:', loginCode);
+    console.log('userInfo:', this.data.userInfo);
 
-    // 构造JSON数据
+    // 如果没有 loginCode，重新获取
+    if (!loginCode) {
+      wx.login({
+        success: (loginRes) => {
+          if (loginRes.code) {
+            console.log('重新获取 code 成功:', loginRes.code);
+            wx.setStorageSync('loginCode', loginRes.code);
+            // 使用新 code 提交任务
+            this.doSubmitTask(jobId, loginRes.code, sequences);
+          } else {
+            wx.showModal({
+              title: '登录凭证失效',
+              content: '请重新登录',
+              showCancel: false,
+            });
+          }
+        },
+        fail: () => {
+          wx.showToast({
+            title: '获取登录凭证失败',
+            icon: 'none',
+          });
+        },
+      });
+      return;
+    }
+
+    this.doSubmitTask(jobId, loginCode, sequences);
+  },
+
+  /**
+   * 实际执行任务提交
+   */
+  doSubmitTask(jobId, loginCode, sequences) {
+    // 构造JSON数据，使用 code 作为用户标识
     const requestData = {
-      userId: userId,
+      code: loginCode,  // 使用微信登录凭证 code
       jobId: jobId,
-      rnaSequence: rnaSequence,
     };
+
+    // 动态添加 rnaSequence1, rnaSequence2, ...
+    sequences.forEach((seq, index) => {
+      requestData[`rnaSequence${index + 1}`] = seq;
+    });
 
     // 打印JSON到控制台（在请求之前）
     console.log('%c========================================', 'color: red; font-size: 16px; font-weight: bold;');
     console.log('%c前端发送的JSON数据', 'color: red; font-size: 16px; font-weight: bold;');
     console.log('%c========================================', 'color: red; font-size: 16px; font-weight: bold;');
     console.log('请求URL:', `${API_BASE_URL}/api/v1/submit-task`);
-    console.log('userId:', userId);
+    console.log('code (微信登录凭证):', loginCode);
     console.log('jobId:', jobId);
-    console.log('rnaSequence长度:', rnaSequence.length);
+    console.log('序列数量:', sequences.length);
+    sequences.forEach((seq, index) => {
+      console.log(`rnaSequence${index + 1}长度:`, seq.length);
+    });
     console.log('JSON字符串:', JSON.stringify(requestData, null, 2));
     console.log('JSON对象:', requestData);
     console.log('%c========================================', 'color: red; font-size: 16px; font-weight: bold;');
@@ -408,20 +489,26 @@ Page({
       method: 'POST',
       header: {
         'Content-Type': 'application/json',
-        'Authorization': wx.getStorageSync('token') || '',
       },
       data: requestData,
       success: (res) => {
         wx.hideLoading();
 
-        if (res.statusCode === 200 && res.data.jobId) {
-          // 使用后端返回的 jobId，或者使用前端生成的 jobId
-          const responseJobId = res.data.jobId || jobId;
-          // 开始轮询任务状态
-          this.startPolling(responseJobId);
+        // Check for 202 status code (Accepted) and jobId
+        if (res.statusCode === 202 && res.data.jobId) {
+          // Navigate to results page with jobId
+          wx.navigateTo({
+            url: '/pages/results/results?jobId=' + res.data.jobId,
+            fail: () => {
+              wx.showToast({
+                title: '页面跳转失败',
+                icon: 'none',
+              });
+            },
+          });
         } else {
           wx.showToast({
-            title: '任务提交失败',
+            title: '提交失败，请重试',
             icon: 'none',
           });
         }

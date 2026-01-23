@@ -4,8 +4,8 @@
   <view class="user-area">
     <block wx:if="{{isLoggedIn}}">
       <view class="user-info" bindtap="onLogoutTap">
-        <text class="user-nickname">{{userInfo.nickName || '未设置昵称'}}</text>
-        <image class="user-avatar" src="{{userInfo.avatarUrl}}" mode="aspectFill" alt="{{userInfo.nickName + '的头像'}}"></image>
+        <text class="user-nickname">{{userInfo.nickname || '未设置昵称'}}</text>
+        <image class="user-avatar" src="{{userInfo.avatarUrl || 'https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG0LAJGFxM4FbnQP6yfMxBgJ0F3YRqJCJ1aPAK2dQagdusBZg/0'}}" mode="aspectFill" alt="{{userInfo.nickname + '的头像'}}"></image>
       </view>
     </block>
     <block wx:else>
@@ -19,16 +19,33 @@
       <text class="title-cn">请输入序列</text>
       <text class="title-en">Please input RNA sequence</text>
     </view>
-    <textarea
-      class="sequence-input"
-      placeholder="请在此处粘贴RNA序列..."
-      value="{{rnaSequence}}"
-      bindinput="onSequenceInput"
-      maxlength="-1"
-    ></textarea>
-    <view class="input-counter">
-      <text class="counter-cn">序列长度：{{rnaSequence.length}}</text>
-      <text class="counter-en">RNA Length: {{rnaSequence.length}}</text>
+    <!-- 循环渲染多个序列输入框 -->
+    <view class="sequence-list">
+      <view class="sequence-item" wx:for="{{rnaSequences}}" wx:key="index">
+        <view class="sequence-header">
+          <text class="sequence-label">序列 {{index + 1}}</text>
+          <text class="sequence-delete" wx:if="{{rnaSequences.length > 1}}" bindtap="onDeleteSequence" data-index="{{index}}">删除</text>
+        </view>
+        <textarea
+          class="sequence-input {{focusedIndex === index ? 'focused' : 'normal'}}"
+          placeholder="请在此处粘贴RNA序列..."
+          value="{{item.value}}"
+          data-index="{{index}}"
+          bindinput="onSequenceInput"
+          bindfocus="onSequenceFocus"
+          bindblur="onSequenceBlur"
+          maxlength="-1"
+        ></textarea>
+        <view class="input-counter">
+          <text class="counter-cn">序列长度：{{item.value.length}}</text>
+          <text class="counter-en">RNA Length: {{item.value.length}}</text>
+        </view>
+      </view>
+    </view>
+    <!-- 添加序列按钮 -->
+    <view class="add-sequence-btn" wx:if="{{rnaSequences.length < 5}}" bindtap="onAddSequence">
+      <text class="add-icon">+</text>
+      <text class="add-text">添加序列（最多5条）</text>
     </view>
   </view>
 

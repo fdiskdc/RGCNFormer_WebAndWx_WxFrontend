@@ -84,21 +84,69 @@ page {
   color: #A8B8C8;
 }
 
-.sequence-input {
+/* 序列列表容器 */
+.sequence-list {
   width: 80vw;
-  height: 500rpx;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+/* 单个序列输入框项 */
+.sequence-item {
+  margin-bottom: 30rpx;
+}
+
+/* 序列头部 */
+.sequence-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10rpx;
+  padding: 0 10rpx;
+}
+
+/* 序列标签 */
+.sequence-label {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #8D8D8D;
+}
+
+/* 删除按钮 */
+.sequence-delete {
+  font-size: 24rpx;
+  color: #E88B8B;
+  padding: 5rpx 15rpx;
+  border-radius: 10rpx;
+  background-color: #F5E5E5;
+}
+
+.sequence-input {
+  width: 100%;
   padding: 30rpx;
   background-color: #fff;
   border-radius: 16rpx;
   font-size: 30rpx;
   line-height: 1.6;
   box-shadow: 0 8rpx 24rpx rgba(141, 141, 141, 0.15);
-  margin-bottom: 20rpx;
+  margin-bottom: 10rpx;
+  box-sizing: border-box;
+  transition: height 0.3s ease;
+}
+
+/* 普通状态（未聚焦）- 缩小 */
+.sequence-input.normal {
+  height: 100rpx;
+}
+
+/* 聚焦状态 - 放大 */
+.sequence-input.focused {
+  height: 500rpx;
 }
 
 /* 计数器区域 */
 .input-counter {
-  width: 80vw;
+  width: 100%;
   text-align: center;
 }
 
@@ -113,6 +161,31 @@ page {
   display: block;
   font-size: 22rpx;
   color: #A8B8C8;
+}
+
+/* 添加序列按钮 */
+.add-sequence-btn {
+  width: 80vw;
+  height: 70rpx;
+  margin-top: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #D4C4C6;
+  border-radius: 35rpx;
+  box-shadow: 0 4rpx 12rpx rgba(141, 141, 141, 0.15);
+}
+
+.add-icon {
+  font-size: 40rpx;
+  color: #fff;
+  margin-right: 10rpx;
+  line-height: 1;
+}
+
+.add-text {
+  font-size: 26rpx;
+  color: #fff;
 }
 
 /* 提交按钮区域 */
