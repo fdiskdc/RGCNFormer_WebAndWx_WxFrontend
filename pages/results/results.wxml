@@ -167,14 +167,6 @@
           <text class="stat-value">{{currentResultData.data.gcn.edges.length}}</text>
         </view>
       </view>
-
-      <!-- ECharts 图结构可视化 -->
-      <view class="gcn-echarts-container">
-        <ec-canvas id="gcn-chart" canvas-id="gcn-canvas" ec="{{gcnEc}}"></ec-canvas>
-      </view>
-      <!-- <view class="gcn-hint">
-        <text>💡 使用 ECharts 绘制，支持拖动和缩放</text>
-      </view> -->
     </view>
 
     <!-- Back Button -->
@@ -184,7 +176,7 @@
   </view>
 
   <!-- 标签页切换区域 - 底部固定 -->
-  <view class="tab-bar-container" wx:if="{{resultDataList.length > 1}}">
+  <view class="tab-bar-container" wx:if="{{resultDataList.length > 0}}">
     <scroll-view class="tab-scroll" scroll-x="true" scroll-with-animation="{{true}}">
       <view class="tab-list">
         <view

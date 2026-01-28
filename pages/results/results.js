@@ -74,10 +74,7 @@ Page({
     viewportElements: [],
     currentHighlight: null,
     sequence: '',
-    scrollToId: '',
-
-    // GCN ECharts 可视化相关
-    gcnEc: {}
+    scrollToId: ''
   },
 
   // 轮询定时器
@@ -219,10 +216,6 @@ Page({
       selectedModificationIndex: selectedModificationIndex
     }, () => {
       this.updateDisplayWeights();
-      // 初始化 GCN 图结构 ECharts 配置
-      if (data.gcn) {
-        this.initGCNECharts();
-      }
     });
 
     wx.showToast({
@@ -745,173 +738,6 @@ Page({
         });
       },
     });
-  },
-
-  /**
-   * 初始化 GCN ECharts 配置
-   */
-  initGCNECharts() {
-    const { currentResultData } = this.data;
-
-    console.log('========== GCN 图结构数据 ==========');
-    if (currentResultData && currentResultData.data && currentResultData.data.gcn) {
-      console.log('节点数:', currentResultData.data.gcn.nodes.length);
-      console.log('边数:', currentResultData.data.gcn.edges.length);
-    } else {
-      console.log('无 GCN 数据');
-      return;
-    }
-    console.log('=====================================');
-
-    this.setData({
-      gcnEc: {
-        onInit: this.initGCNChart.bind(this)
-      }
-    });
-  },
-
-  /**
-   * 初始化 GCN 图表
-   */
-  initGCNChart(canvas, width, height, dpr) {
-    const { currentResultData } = this.data;
-    if (!currentResultData || !currentResultData.data || !currentResultData.data.gcn) {
-      return null;
-    }
-
-    console.log('初始化 ECharts, canvas尺寸:', { width, height, dpr });
-
-    const echarts = require('echarts');
-
-    const chart = echarts.init(canvas, null, {
-      width: width,
-      height: height,
-      devicePixelRatio: dpr
-    });
-
-    canvas.setChart(chart);
-
-    const option = this.generateGCNEChartsOption(currentResultData.data.gcn);
-    console.log('ECharts 配置:', option);
-
-    chart.setOption(option);
-    return chart;
-  },
-
-  /**
-   * 生成 GCN ECharts 配置
-   */
-  generateGCNEChartsOption(gcnData) {
-    const { nodes, edges } = gcnData;
-
-    console.log('生成 ECharts 配置, 节点数:', nodes.length, '边数:', edges.length);
-
-    const echartsNodes = nodes.map(node => {
-      let nucleotide = '';
-      if (node.label.includes(':')) {
-        const parts = node.label.split(':');
-        nucleotide = parts[1].trim().charAt(0).toUpperCase();
-      } else {
-        nucleotide = node.label.charAt(0).toUpperCase();
-      }
-
-      return {
-        id: node.id,
-        name: node.label,
-        category: nucleotide,
-        symbolSize: 15,
-        itemStyle: {
-          color: this.getNucleotideMorandiColor(nucleotide)
-        },
-        label: {
-          show: true,
-          fontSize: 10,
-          formatter: () => nucleotide
-        }
-      };
-    });
-
-    const echartsEdges = edges.map(edge => ({
-      source: edge.source,
-      target: edge.target
-    }));
-
-    const categories = [
-      { name: 'A' },
-      { name: 'C' },
-      { name: 'G' },
-      { name: 'T' }
-    ];
-
-    console.log('ECharts 节点数据:', echartsNodes);
-    console.log('ECharts 边数据:', echartsEdges);
-
-    return {
-      title: {
-        show: false
-      },
-      tooltip: {
-        formatter: params => {
-          if (params.dataType === 'node') {
-            return `节点: ${params.data.name}`;
-          } else if (params.dataType === 'edge') {
-            return `${params.data.source} → ${params.data.target}`;
-          }
-          return '';
-        }
-      },
-      series: [
-        {
-          type: 'graph',
-          layout: 'force',
-          data: echartsNodes,
-          links: echartsEdges,
-          categories: categories,
-          roam: true,
-          draggable: true,
-          focusNodeAdjacency: true,
-          itemStyle: {
-            borderColor: '#fff',
-            borderWidth: 1,
-            shadowBlur: 10,
-            shadowColor: 'rgba(0, 0, 0, 0.1)'
-          },
-          lineStyle: {
-            color: '#a8a8a8',
-            curveness: 0,
-            width: 1.5
-          },
-          emphasis: {
-            lineStyle: {
-              width: 3
-            }
-          },
-          force: {
-            repulsion: 100,
-            edgeLength: 50,
-            gravity: 0.1,
-            friction: 0.6
-          },
-          labelLayout: {
-            hideOverlap: true
-          }
-        }
-      ]
-    };
-  },
-
-  /**
-   * 获取核苷酸的莫兰迪颜色
-   */
-  getNucleotideMorandiColor(nucleotide) {
-    const colorMap = {
-      'A': '#c5b5a5', // 腺嘌呤 - 柔和的灰玫瑰色
-      'C': '#b5c5d4', // 胞嘧啶 - 柔和的灰蓝色
-      'G': '#c5d4b5', // 鸟嘌呤 - 柔和的灰绿色
-      'T': '#d4c5b5', // 胸腺嘧啶 - 柔和的灰黄色
-      'U': '#d4c5b5'  // 尿嘧啶 - 柔和的灰黄色
-    };
-    return colorMap[nucleotide] || '#d4d4d4';
   },
 
   /**

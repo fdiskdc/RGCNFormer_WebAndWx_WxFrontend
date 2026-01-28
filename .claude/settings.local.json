@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(du:*)",
+      "Bash(if [ -d \"miniprogram_npm\" ])",
+      "Bash(then du -sh miniprogram_npm)",
+      "Bash(else echo \"miniprogram_npm directory not found\")",
+      "Bash(fi:*)"
+    ]
+  }
+}

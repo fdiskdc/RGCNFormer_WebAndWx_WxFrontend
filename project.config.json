@@ -2,7 +2,8 @@
   "compileType": "miniprogram",
   "libVersion": "3.14.0",
   "packOptions": {
-    "ignore": [],
+    "ignore": [
+    ],
     "include": []
   },
   "setting": {

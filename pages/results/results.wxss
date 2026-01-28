@@ -25,8 +25,8 @@
   border-top-color: #07c160;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  max-width: 80px;
-  max-height: 80px;
+  max-width: 15vw;
+  max-height: 15vw;
 }
 
 @keyframes spin {
@@ -87,7 +87,7 @@
   box-shadow: 0 1vw 3vw rgba(0, 0, 0, 0.1), 0 0.5vw 1.5vw rgba(0, 0, 0, 0.06);
   width: 95%;
   margin: 0 auto;
-  padding-bottom: 120rpx;
+  padding-bottom: 15vh;
 }
 
 /* 序列信息标签 */
@@ -106,10 +106,10 @@
   left: 0;
   right: 0;
   background-color: #fff;
-  box-shadow: 0 -4rpx 16rpx rgba(141, 141, 141, 0.15);
+  box-shadow: 0 -0.3vw 1vw rgba(141, 141, 141, 0.15);
   z-index: 100;
-  padding: 16rpx 0;
-  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+  padding: 1.2vw 0;
+  padding-bottom: calc(1.2vw + env(safe-area-inset-bottom));
 }
 
 /* 标签滚动区域 */
@@ -120,7 +120,7 @@
 
 .tab-list {
   display: inline-flex;
-  padding: 0 20rpx;
+  padding: 0 1.5vw;
 }
 
 /* 单个标签项 */
@@ -130,9 +130,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 20rpx 32rpx;
-  margin: 0 8rpx;
-  border-radius: 20rpx;
+  padding: 1.5vw 2.4vw;
+  margin: 0 0.6vw;
+  border-radius: 1.5vw;
   transition: all 0.3s ease;
   white-space: nowrap;
 }
@@ -144,7 +144,7 @@
 
 .tab-item .tab-text {
   color: #8D8D8D;
-  font-size: 28rpx;
+  font-size: 0.9em;
 }
 
 /* 选中标签 - 莫兰迪蓝灰 */
@@ -160,17 +160,17 @@
 /* 标签指示器 */
 .tab-indicator {
   position: absolute;
-  bottom: 8rpx;
-  width: 24rpx;
-  height: 4rpx;
+  bottom: 0.6vw;
+  width: 1.8vw;
+  height: 0.3vw;
   background-color: #8B9DAA;
-  border-radius: 2rpx;
+  border-radius: 0.15vw;
 }
 
 /* Header - 相对大小 */
 .header {
   padding-bottom: 2%;
-  border-bottom: 1px solid #e5e5e5;
+  border-bottom: 0.08em solid #e5e5e5;
   margin-bottom: 2%;
 }
 
@@ -198,7 +198,7 @@
   color: #333;
   margin-bottom: 2%;
   padding-left: 2%;
-  border-left: 3px solid #07c160;
+  border-left: 0.25em solid #07c160;
 }
 
 .section-subtitle {
@@ -246,7 +246,7 @@
   box-sizing: border-box;
   background: linear-gradient(135deg, #faf9f6 0%, #f5f4f1 100%);
   border-left-color: #9aab9f;
-  border-left-width: 3px;
+  border-left-width: 0.25em;
   box-shadow: 0 0.5vw 1.5vw rgba(0, 0, 0, 0.08), 0 0.2vw 0.5vw rgba(0, 0, 0, 0.04);
 }
 
@@ -289,8 +289,8 @@
   align-items: center;
   padding: 2% 3%;
   background-color: #fff;
-  border-radius: 8px;
-  border-left: 2px solid #d4d4d4;
+  border-radius: 0.6em;
+  border-left: 0.15em solid #d4d4d4;
   box-shadow: 0 0.3vw 1vw rgba(0, 0, 0, 0.08), 0 0.1vw 0.4vw rgba(0, 0, 0, 0.04);
   flex: 0 0 auto;
   max-width: 45%;
@@ -389,7 +389,7 @@
 .group-node {
   margin-bottom: 2%;
   flex: 1;
-  min-width: 80px;
+  min-width: 15vw;
 }
 
 .group-node .node-text {
@@ -468,23 +468,23 @@
 
 .modification-picker {
   flex: 1;
-  min-width: 120px;
+  min-width: 20vw;
 }
 
 .picker-display {
   padding: 2% 3%;
   background-color: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
+  border: 0.08em solid #e0e0e0;
+  border-radius: 0.6em;
   font-size: 1em;
   color: #333;
 }
 
 .topx-input {
-  width: 60px;
+  width: 10vw;
   padding: 1.5%;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
+  border: 0.08em solid #e0e0e0;
+  border-radius: 0.6em;
   font-size: 1em;
   text-align: center;
 }
@@ -516,7 +516,7 @@
   background-color: #07c160;
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: 0.6em;
   font-size: 0.9em;
 }
 
@@ -528,7 +528,7 @@
 .nav-info {
   font-size: 0.9em;
   color: #666;
-  min-width: 60px;
+  min-width: 10vw;
   text-align: center;
 }
 
@@ -540,10 +540,10 @@
 
 .highlight-info {
   background-color: #fff7e6;
-  border-left: 3px solid #fa8c16;
+  border-left: 0.25em solid #fa8c16;
   padding: 2%;
   margin-bottom: 3%;
-  border-radius: 8px;
+  border-radius: 0.6em;
 }
 
 .highlight-label {
@@ -580,12 +580,12 @@
 .base-block {
   width: 8vw;
   height: 8vw;
-  max-width: 35px;
-  max-height: 35px;
+  max-width: 7vw;
+  max-height: 7vw;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
+  border-radius: 0.5em;
   font-size: 0.9em;
   font-weight: bold;
   color: #333;
@@ -595,11 +595,11 @@
 .sequence-block.highlighted .base-block {
   width: 12vw;
   height: 12vw;
-  max-width: 50px;
-  max-height: 50px;
+  max-width: 10vw;
+  max-height: 10vw;
   font-size: 1.1em;
   box-shadow: 0 0.5vw 1.5vw rgba(0, 0, 0, 0.2);
-  border: 2px solid #fa8c16;
+  border: 0.15em solid #fa8c16;
 }
 
 .annotation-label {
@@ -614,14 +614,14 @@
   display: flex;
   justify-content: space-around;
   background-color: #f0f0f0;
-  border-radius: 8px;
+  border-radius: 0.6em;
   padding: 2%;
   margin-bottom: 3%;
 }
 
 .sites-list {
   background-color: #fff;
-  border-radius: 8px;
+  border-radius: 0.6em;
   padding: 2%;
 }
 
@@ -637,7 +637,7 @@
   align-items: center;
   padding: 2%;
   background-color: #f8f8f8;
-  border-radius: 6px;
+  border-radius: 0.5em;
   margin-bottom: 1.5%;
   flex-wrap: wrap;
   gap: 2%;
@@ -647,7 +647,7 @@
   font-size: 0.9em;
   font-weight: bold;
   color: #07c160;
-  min-width: 30px;
+  min-width: 5vw;
 }
 
 .site-list-item .site-type {
@@ -674,12 +674,12 @@
   font-size: 1em;
 }
 
-/* GCN Results - ECharts 可视化 */
+/* GCN Results */
 .gcn-stats {
   display: flex;
   justify-content: space-around;
   background-color: #f8f8f8;
-  border-radius: 8px;
+  border-radius: 0.6em;
   padding: 2%;
   margin-bottom: 2%;
 }
@@ -702,31 +702,6 @@
   color: #07c160;
 }
 
-/* GCN ECharts 容器 */
-.gcn-echarts-container {
-  width: 100%;
-  height: 50vh;
-  background-color: #fafafa;
-  border-radius: 8px;
-  box-shadow: 0 0.3vw 1vw rgba(0, 0, 0, 0.08);
-  margin-bottom: 2%;
-}
-
-.gcn-echarts {
-  width: 100%;
-  height: 100%;
-}
-
-/* GCN 提示 */
-.gcn-hint {
-  background-color: #f0f0f0;
-  padding: 2% 3%;
-  border-radius: 6px;
-  font-size: 0.8em;
-  color: #666;
-  text-align: center;
-}
-
 /* Button Container - 相对大小 */
 .button-container {
   margin-top: 3%;
@@ -737,7 +712,7 @@
   background-color: #07c160;
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: 0.6em;
   font-size: 1.1em;
   padding: 4% 0;
 }
