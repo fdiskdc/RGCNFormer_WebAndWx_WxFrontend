@@ -2,8 +2,7 @@
   "compileType": "miniprogram",
   "libVersion": "3.14.0",
   "packOptions": {
-    "ignore": [
-    ],
+    "ignore": [],
     "include": []
   },
   "setting": {
@@ -37,6 +36,6 @@
     "tabIndent": "auto",
     "tabSize": 2
   },
-  "appid": "",
+  "appid": "wxcb604a93d537d38a",
   "simulatorPluginLibVersion": {}
 }
