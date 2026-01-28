@@ -13,6 +13,15 @@
     </block>
   </view>
 
+  <!-- 进度条弹窗 -->
+  <view class="progress-modal" wx:if="{{showProgress}}">
+    <view class="progress-content">
+      <view class="progress-spinner"></view>
+      <text class="progress-text">Processing... {{progressCurrent}}/{{progressTotal}}</text>
+      <text class="progress-subtext">正在生成可视化，请稍候...</text>
+    </view>
+  </view>
+
   <!-- 序列输入区域 - 页面中心 -->
   <view class="input-area">
     <view class="input-title">
@@ -28,7 +37,7 @@
         </view>
         <textarea
           class="sequence-input {{focusedIndex === index ? 'focused' : 'normal'}}"
-          placeholder="请在此处粘贴RNA序列..."
+          placeholder="请在此处粘贴RNA序列（至少51个字符，仅限A/T/C/G/U/N）"
           value="{{item.value}}"
           data-index="{{index}}"
           bindinput="onSequenceInput"

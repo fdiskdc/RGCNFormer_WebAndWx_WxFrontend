@@ -14,14 +14,14 @@
   </view>
 
   <!-- Results Display -->
-  <view wx:if="{{!isLoading && resultData}}" class="results-container">
+  <view wx:if="{{!isLoading && resultDataList.length > 0}}" class="results-wrapper">
     <view class="header">
       <text class="title">分析结果</text>
-      <!-- <text class="job-id">任务ID: {{jobId}}</text> -->
+      <text class="sequence-info" wx:if="{{resultDataList.length > 1}}">序列 {{currentResultData.index + 1}} / {{resultDataList.length}}</text>
     </view>
 
     <!-- Classification Results -->
-    <view class="section" wx:if="{{resultData.classification}}">
+    <view class="section" wx:if="{{currentResultData.data.classification}}">
       <view class="section-title">分类结果</view>
       <view class="hierarchy-tree">
         <!-- Nucleotide Groups with their Modifications -->
@@ -49,7 +49,7 @@
     </view>
 
     <!-- Attention Results -->
-    <view class="section" wx:if="{{resultData.attention}}">
+    <view class="section" wx:if="{{currentResultData.data.attention}}">
       <view class="section-title">注意力权重</view>
 
       <!-- 无修饰检测提示 -->
@@ -132,7 +132,7 @@
             </view>
             <view class="stat-item">
               <text class="stat-label">总权重数据:</text>
-              <text class="stat-value">{{resultData.attention.weights.length}}</text>
+              <text class="stat-value">{{currentResultData.data.attention.weights.length}}</text>
             </view>
             <view class="stat-item">
               <text class="stat-label">当前显示:</text>
@@ -155,16 +155,16 @@
     </view>
 
     <!-- GCN Results -->
-    <view class="section" wx:if="{{resultData.gcn}}">
+    <view class="section" wx:if="{{currentResultData.data.gcn}}">
       <view class="section-title">GCN 图结构</view>
       <view class="gcn-stats">
         <view class="stat-item">
           <text class="stat-label">节点数:</text>
-          <text class="stat-value">{{resultData.gcn.nodes.length}}</text>
+          <text class="stat-value">{{currentResultData.data.gcn.nodes.length}}</text>
         </view>
         <view class="stat-item">
           <text class="stat-label">边数:</text>
-          <text class="stat-value">{{resultData.gcn.edges.length}}</text>
+          <text class="stat-value">{{currentResultData.data.gcn.edges.length}}</text>
         </view>
       </view>
 
@@ -172,14 +172,31 @@
       <view class="gcn-echarts-container">
         <ec-canvas id="gcn-chart" canvas-id="gcn-canvas" ec="{{gcnEc}}"></ec-canvas>
       </view>
-      <view class="gcn-hint">
+      <!-- <view class="gcn-hint">
         <text>💡 使用 ECharts 绘制，支持拖动和缩放</text>
-      </view>
+      </view> -->
     </view>
 
     <!-- Back Button -->
-    <view class="button-container">
+    <!-- <view class="button-container">
       <button class="back-button" bindtap="onBackTap">返回</button>
-    </view>
+    </view> -->
+  </view>
+
+  <!-- 标签页切换区域 - 底部固定 -->
+  <view class="tab-bar-container" wx:if="{{resultDataList.length > 1}}">
+    <scroll-view class="tab-scroll" scroll-x="true" scroll-with-animation="{{true}}">
+      <view class="tab-list">
+        <view
+          class="tab-item {{currentTabIndex === index ? 'active' : ''}}"
+          wx:for="{{resultDataList}}"
+          wx:key="index"
+          bindtap="onTabTap"
+          data-index="{{index}}">
+          <text class="tab-text">序列 {{item.index + 1}}</text>
+          <view class="tab-indicator" wx:if="{{currentTabIndex === index}}"></view>
+        </view>
+      </view>
+    </scroll-view>
   </view>
 </view>

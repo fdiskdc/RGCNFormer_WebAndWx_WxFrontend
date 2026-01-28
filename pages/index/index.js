@@ -17,6 +17,11 @@ Page({
     ],
     focusedIndex: 0,  // 当前聚焦的输入框索引
     canIUseGetUserProfile: wx.canIUse('getUserProfile'),
+    // 进度条相关
+    showProgress: false,
+    progressCurrent: 0,
+    progressTotal: 0,
+    batchJobId: '',
   },
 
   // 轮询定时器
@@ -40,7 +45,20 @@ Page({
    * 生命周期函数--监听页面卸载
    */
   onUnload() {
-    // 清除定时器
+    this.clearPollTimer();
+  },
+
+  /**
+   * 生命周期函数--监听页面隐藏
+   */
+  onHide() {
+    this.clearPollTimer();
+  },
+
+  /**
+   * 清除轮询定时器
+   */
+  clearPollTimer() {
     if (this.pollTimer) {
       clearInterval(this.pollTimer);
       this.pollTimer = null;
@@ -210,28 +228,6 @@ Page({
   },
 
   /**
-   * 保存用户信息并更新页面状态
-   */
-  saveUserInfo(userInfo) {
-    console.log('保存用户信息:', userInfo);
-
-    // 保存用户信息到本地缓存
-    wx.setStorageSync('userInfo', userInfo);
-
-    // 更新页面状态
-    this.setData({
-      isLoggedIn: true,
-      userInfo: userInfo,
-      isLogging: false,
-    });
-
-    wx.showToast({
-      title: '登录成功',
-      icon: 'success',
-    });
-  },
-
-  /**
    * 退出登录
    */
   onLogoutTap() {
@@ -270,7 +266,9 @@ Page({
     const index = e.currentTarget.dataset.index;
     const value = e.detail.value;
     const rnaSequences = this.data.rnaSequences;
-    rnaSequences[index].value = value;
+    // 自动转换为大写并过滤非法字符（只保留 ACGUTN）
+    const filteredValue = value.toUpperCase().replace(/[^ACGUTN]/g, '');
+    rnaSequences[index].value = filteredValue;
     this.setData({
       rnaSequences: rnaSequences,
     });
@@ -335,20 +333,20 @@ Page({
    * 验证RNA序列合法性
    */
   validateRNASequence(sequence) {
-    // 检查长度
-    if (sequence.length > 1001) {
+    // 检查最小长度（至少51个字符）
+    if (sequence.length < 51) {
       return {
         valid: false,
-        message: '序列长度不能超过1001个字符',
+        message: '序列长度至少为51个字符',
       };
     }
 
-    // 检查字符是否只包含 ACGUTN
-    const validPattern = /^[ACGUTN]+$/i;
+    // 检查字符是否只包含大写 ATCGUN（不允许小写和其他字符）
+    const validPattern = /^[ATCGUN]+$/;
     if (!validPattern.test(sequence)) {
       return {
         valid: false,
-        message: '序列只能包含 A、C、G、U、T、N 字符',
+        message: '序列只能包含大写字母 A、T、C、G、U、N',
       };
     }
 
@@ -458,9 +456,14 @@ Page({
     const requestData = {
       code: loginCode,  // 使用微信登录凭证 code
       jobId: jobId,
+      rnaSequence1: '',
+      rnaSequence2: '',
+      rnaSequence3: '',
+      rnaSequence4: '',
+      rnaSequence5: '',
     };
 
-    // 动态添加 rnaSequence1, rnaSequence2, ...
+    // 动态添加 rnaSequence1, rnaSequence2, ... (即使为空也保留key)
     sequences.forEach((seq, index) => {
       requestData[`rnaSequence${index + 1}`] = seq;
     });
@@ -469,7 +472,7 @@ Page({
     console.log('%c========================================', 'color: red; font-size: 16px; font-weight: bold;');
     console.log('%c前端发送的JSON数据', 'color: red; font-size: 16px; font-weight: bold;');
     console.log('%c========================================', 'color: red; font-size: 16px; font-weight: bold;');
-    console.log('请求URL:', `${API_BASE_URL}/api/v1/submit-task`);
+    console.log('请求URL:', `${API_BASE_URL}/api/v1/wx-submit-task`);
     console.log('code (微信登录凭证):', loginCode);
     console.log('jobId:', jobId);
     console.log('序列数量:', sequences.length);
@@ -485,7 +488,7 @@ Page({
     });
 
     wx.request({
-      url: `${API_BASE_URL}/api/v1/submit-task`,
+      url: `${API_BASE_URL}/api/v1/wx-submit-task`,
       method: 'POST',
       header: {
         'Content-Type': 'application/json',
@@ -494,21 +497,19 @@ Page({
       success: (res) => {
         wx.hideLoading();
 
-        // Check for 202 status code (Accepted) and jobId
-        if (res.statusCode === 202 && res.data.jobId) {
-          // Navigate to results page with jobId
-          wx.navigateTo({
-            url: '/pages/results/results?jobId=' + res.data.jobId,
-            fail: () => {
-              wx.showToast({
-                title: '页面跳转失败',
-                icon: 'none',
-              });
-            },
-          });
+        console.log('提交任务响应:', res);
+
+        // Check for 202 status code and data.job_id
+        if (res.statusCode === 202 && res.data.code === 200 && res.data.data && res.data.data.job_id) {
+          const batchJobId = res.data.data.job_id;
+          console.log('任务提交成功，batch_job_id:', batchJobId);
+
+          // 开始轮询任务进度
+          this.startPollingProgress(batchJobId);
         } else {
+          console.error('提交任务失败:', res);
           wx.showToast({
-            title: '提交失败，请重试',
+            title: res.data?.message || '提交失败，请重试',
             icon: 'none',
           });
         }
@@ -525,77 +526,103 @@ Page({
   },
 
   /**
-   * 开始轮询任务状态
+   * 开始轮询任务进度
    */
-  startPolling(jobId) {
-    // 显示全屏等待框
-    wx.showLoading({
-      title: '可视化生成中...',
-      mask: true,
+  startPollingProgress(batchJobId) {
+    console.log('开始轮询任务进度, batchJobId:', batchJobId);
+
+    // 显示进度条
+    this.setData({
+      showProgress: true,
+      batchJobId: batchJobId,
+      progressCurrent: 0,
+      progressTotal: 0,
     });
 
     // 清除之前的定时器（如果有）
-    if (this.pollTimer) {
-      clearInterval(this.pollTimer);
-    }
+    this.clearPollTimer();
 
     // 立即查询一次
-    this.checkTaskStatus(jobId);
+    this.checkTaskProgress(batchJobId);
 
-    // 设置定时器，每3秒查询一次
+    // 设置定时器，每2秒查询一次
     this.pollTimer = setInterval(() => {
-      this.checkTaskStatus(jobId);
-    }, 3000);
+      this.checkTaskProgress(batchJobId);
+    }, 2000);
   },
 
   /**
-   * 查询任务状态
+   * 查询任务进度
    */
-  checkTaskStatus(jobId) {
+  checkTaskProgress(batchJobId) {
     wx.request({
-      url: `${API_BASE_URL}/api/v1/get-redirect-url/${jobId}`,
+      url: `${API_BASE_URL}/api/v1/wx-task-progress/${batchJobId}`,
       method: 'GET',
       header: {
-        'Authorization': wx.getStorageSync('token') || '',
+        'Content-Type': 'application/json',
       },
       success: (res) => {
-        if (res.statusCode === 200 && res.data) {
-          const { status, redirectUrl } = res.data;
+        console.log('任务进度响应:', res);
 
-          if (status === 'COMPLETED' && redirectUrl) {
-            // 任务完成，跳转到webview页面
-            this.handleTaskComplete(redirectUrl);
-          } else if (status === 'FAILED') {
-            // 任务失败
-            this.handleTaskFailed();
+        if (res.statusCode === 200 && res.data.code === 200 && res.data.data) {
+          const data = res.data.data;
+          const status = data.status;
+          const total = data.total_sequences || 0;
+          const completed = data.completed_sequences || 0;
+          const results = data.results || [];
+
+          console.log(`任务进度: ${completed}/${total}, status: ${status}`);
+
+          // 更新进度条
+          this.setData({
+            progressCurrent: completed,
+            progressTotal: total,
+          });
+
+          // 检查是否完成
+          if (status === 'COMPLETED' || completed >= total) {
+            // 清除定时器
+            this.clearPollTimer();
+
+            console.log('所有任务已完成，准备跳转');
+
+            // 延迟1秒后跳转到可视化页面
+            setTimeout(() => {
+              this.navigateToVisualization(results);
+            }, 1000);
           }
-          // 如果是 PROCESSING，继续等待
+        } else if (res.statusCode === 404) {
+          // 任务不存在
+          console.error('任务不存在:', batchJobId);
+          this.handlePollingError('任务不存在');
         }
       },
       fail: (err) => {
-        console.error('查询任务状态失败:', err);
+        console.error('查询任务进度失败:', err);
         // 网络错误，继续轮询
       },
     });
   },
 
   /**
-   * 处理任务完成
+   * 跳转到可视化页面
    */
-  handleTaskComplete(redirectUrl) {
-    // 清除定时器
-    if (this.pollTimer) {
-      clearInterval(this.pollTimer);
-      this.pollTimer = null;
-    }
+  navigateToVisualization(results) {
+    // 隐藏进度条
+    this.setData({
+      showProgress: false,
+    });
 
-    // 关闭等待框
-    wx.hideLoading();
+    console.log('可视化结果:', results);
 
-    // 跳转到webview页面
+    // 将结果编码后传递给results页面
+    const resultsJson = JSON.stringify(results);
+    const encodedResults = encodeURIComponent(resultsJson);
+
     wx.navigateTo({
-      url: `/pages/webview/index?url=${encodeURIComponent(redirectUrl)}`,
-      fail: () => {
+      url: `/pages/results/results?results=${encodedResults}`,
+      fail: (err) => {
+        console.error('页面跳转失败:', err);
         wx.showToast({
           title: '页面跳转失败',
           icon: 'none',
@@ -605,21 +632,21 @@ Page({
   },
 
   /**
-   * 处理任务失败
+   * 处理轮询错误
    */
-  handleTaskFailed() {
+  handlePollingError(errorMessage) {
     // 清除定时器
-    if (this.pollTimer) {
-      clearInterval(this.pollTimer);
-      this.pollTimer = null;
-    }
+    this.clearPollTimer();
 
-    // 关闭等待框
-    wx.hideLoading();
+    // 隐藏进度条
+    this.setData({
+      showProgress: false,
+    });
 
-    wx.showToast({
-      title: '任务生成失败',
-      icon: 'error',
+    wx.showModal({
+      title: '错误',
+      content: errorMessage,
+      showCancel: false,
     });
   },
 });
