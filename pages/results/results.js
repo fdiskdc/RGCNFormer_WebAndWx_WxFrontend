@@ -1,5 +1,5 @@
-// API 基础配置
-const API_BASE_URL = 'https://rgcnformer.dawdawdawdawfafaawf.xyz'
+// 请求封装（支持主备服务器切换）
+const { requestWithFallback, resetServer, getWebBaseUrl } = require('../../utils/request');
 
 // 12类修饰名称映射
 const MOD_NAMES = {
@@ -121,25 +121,49 @@ Page({
    */
   async loadBatchResults(results) {
     console.log('开始加载批量结果, 数量:', results.length);
+    console.log('传入的 results 数据:', results);
 
-    // results 格式: [{ index: 0, jobId: "..." }, ...]
+    // 重置服务器选择，确保从主服务器开始
+    resetServer();
+
+    // 检查数据格式：如果已经包含完整数据（有 attention 或 classification 字段），直接使用
+    // 否则视为 jobId 列表，需要调用 API 获取
+    const hasFullData = results.length > 0 && (results[0].attention || results[0].classification);
+
+    console.log('是否包含完整数据:', hasFullData);
+
+    // results 格式: [{ index: 0, jobId: "..." }, ...] 或完整数据
     const resultDataList = [];
     let loadedCount = 0;
 
-    for (const resultItem of results) {
-      try {
-        const data = await this.fetchSingleResult(resultItem.jobId);
-        if (data) {
-          resultDataList.push({
-            index: resultItem.index,
-            jobId: resultItem.jobId,
-            data: data
-          });
+    if (hasFullData) {
+      // 数据已完整，直接使用
+      console.log('数据已完整，直接使用');
+      results.forEach((resultItem, idx) => {
+        resultDataList.push({
+          index: resultItem.index || idx,
+          jobId: resultItem.jobId || 'unknown',
+          data: resultItem
+        });
+      });
+    } else {
+      // 需要从 API 获取数据
+      console.log('需要从 API 获取数据');
+      for (const resultItem of results) {
+        try {
+          const data = await this.fetchSingleResult(resultItem.jobId);
+          if (data) {
+            resultDataList.push({
+              index: resultItem.index,
+              jobId: resultItem.jobId,
+              data: data
+            });
+          }
+          loadedCount++;
+        } catch (e) {
+          console.error(`获取结果 ${resultItem.index} 失败:`, e);
+          loadedCount++;
         }
-        loadedCount++;
-      } catch (e) {
-        console.error(`获取结果 ${resultItem.index} 失败:`, e);
-        loadedCount++;
       }
     }
 
@@ -161,6 +185,9 @@ Page({
       resultDataList: resultDataList
     });
 
+    console.log('========== 准备初始化第一个结果 ==========');
+    console.log('resultDataList[0]:', resultDataList[0]);
+
     // 初始化第一个结果
     this.initializeCurrentResult(resultDataList[0]);
   },
@@ -170,20 +197,15 @@ Page({
    */
   fetchSingleResult(jobId) {
     return new Promise((resolve, reject) => {
-      wx.request({
-        url: `${API_BASE_URL}/api/v1/results/${jobId}`,
-        method: 'GET',
-        success: (res) => {
-          if (res.statusCode === 200) {
-            resolve(res.data);
-          } else {
-            reject(new Error(`获取结果失败: ${res.statusCode}`));
-          }
-        },
-        fail: (err) => {
-          reject(err);
+      requestWithFallback(`/api/v1/results/${jobId}`, {
+        method: 'GET'
+      }).then((res) => {
+        if (res.statusCode === 200) {
+          resolve(res.data);
+        } else {
+          reject(new Error(`获取结果失败: ${res.statusCode}`));
         }
-      });
+      }).catch(reject);
     });
   },
 
@@ -192,6 +214,12 @@ Page({
    */
   initializeCurrentResult(resultItem) {
     const data = resultItem.data;
+
+    console.log('========== initializeCurrentResult ==========');
+    console.log('resultItem:', resultItem);
+    console.log('data:', data);
+    console.log('data.classification:', data.classification);
+    console.log('data.attention:', data.attention);
 
     // 将 classification 转换为核苷酸分组树结构
     let classificationTree = null;
@@ -255,6 +283,9 @@ Page({
   startPolling() {
     console.log('开始轮询结果, jobId:', this.data.jobId);
 
+    // 重置服务器选择，确保从主服务器开始
+    resetServer();
+
     // Clear any existing timer
     if (this.pollTimer) {
       clearInterval(this.pollTimer);
@@ -283,45 +314,40 @@ Page({
       return;
     }
 
-    wx.request({
-      url: `${API_BASE_URL}/api/v1/results/${jobId}`,
-      method: 'GET',
-      success: (res) => {
-        if (res.statusCode === 200) {
-          // Successfully retrieved results
-          console.log('成功获取结果:', res.data);
+    requestWithFallback(`/api/v1/results/${jobId}`, {
+      method: 'GET'
+    }).then((res) => {
+      if (res.statusCode === 200) {
+        // Successfully retrieved results
+        console.log('成功获取结果:', res.data);
 
-          // 将单个结果包装成列表格式
-          const resultItem = {
-            index: 0,
-            jobId: jobId,
-            data: res.data
-          };
+        // 将单个结果包装成列表格式
+        const resultItem = {
+          index: 0,
+          jobId: jobId,
+          data: res.data
+        };
 
-          this.setData({
-            resultDataList: [resultItem]
-          }, () => {
-            this.initializeCurrentResult(resultItem);
-          });
-        } else if (res.statusCode === 404) {
-          // Job not found yet, continue polling
-          console.log('任务尚未完成，继续轮询...');
-          this.setData({
-            pollAttempts: pollAttempts + 1
-          });
-        } else {
-          // Other error
-          console.error('获取结果失败:', res);
-          this.handlePollError('获取结果失败');
-        }
-      },
-      fail: (err) => {
-        console.error('网络错误:', err);
-        // Network error, continue polling but increment attempts
+        this.setData({
+          resultDataList: [resultItem]
+        }, () => {
+          this.initializeCurrentResult(resultItem);
+        });
+      } else if (res.statusCode === 404) {
+        // 任务未完成，继续轮询
+        console.log('任务尚未完成，继续轮询...');
         this.setData({
           pollAttempts: pollAttempts + 1
         });
+      } else {
+        // Other error
+        console.error('获取结果失败:', res);
+        this.handlePollError('获取结果失败');
       }
+    }).catch((err) => {
+      console.error('所有服务器均不可用:', err);
+      // 所有服务器都失败，停止轮询
+      this.handlePollError('网络连接失败，请检查网络后重试');
     });
   },
 
@@ -727,7 +753,7 @@ Page({
     const { currentResultData } = this.data;
     if (!currentResultData) return;
 
-    const webAppUrl = `https://rgcnformer.dawdawdawdawfafaawf.xyz/results/${currentResultData.jobId}`;
+    const webAppUrl = `${getWebBaseUrl()}/results/${currentResultData.jobId}`;
 
     wx.navigateTo({
       url: `/pages/webview/index?url=${encodeURIComponent(webAppUrl)}`,

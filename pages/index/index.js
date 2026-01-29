@@ -4,8 +4,8 @@ const defaultAvatarUrl = 'https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lcia0
 // 引入RNA示例序列
 const { RNA_EXAMPLES } = require('../../utils/rnaExamples');
 
-// API 基础配置
-const API_BASE_URL = 'https://rgcnformer.dawdawdawdawfafaawf.xyz' // 请替换为实际的API域名
+// 引入API配置（支持主备服务器切换）
+const { getApiBaseUrl, resetServer, requestWithFallback, requestLogin } = require('../../utils/request');
 
 Page({
   data: {
@@ -32,6 +32,8 @@ Page({
    * 生命周期函数--监听页面加载
    */
   onLoad() {
+    // 重置服务器选择，确保从主服务器开始
+    resetServer();
     this.checkLoginStatus();
     this.loadRandomExample();
   },
@@ -132,12 +134,9 @@ Page({
               console.log('wx.login 成功，code:', loginRes.code);
 
               // 调用后端登录接口，同时发送用户信息
-              const loginUrl = `${API_BASE_URL}/api/v1/wx/login`;
-              console.log('登录请求URL:', loginUrl);
-              console.log('API_BASE_URL:', API_BASE_URL);
+              console.log('登录请求开始');
 
-              wx.request({
-                url: loginUrl,
+              requestLogin('/api/v1/wx/login', {
                 method: 'POST',
                 header: {
                   'Content-Type': 'application/json',
@@ -146,57 +145,55 @@ Page({
                   loginCode: loginRes.code,
                   nickname: userProfile.nickName,
                   avatarUrl: userProfile.avatarUrl,
-                },
-                success: (res) => {
-                  wx.hideLoading();
+                }
+              }).then((res) => {
+                wx.hideLoading();
 
-                  if (res.statusCode === 200 && res.data.code === 0) {
-                    // 后端返回的数据格式: { code: 0, openid: xxx, data: { nickname, avatarUrl }, message: xxx }
-                    const backendData = res.data.data || {};
+                if (res.statusCode === 200 && res.data.code === 0) {
+                  // 后端返回的数据格式: { code: 0, openid: xxx, data: { nickname, avatarUrl }, message: xxx }
+                  const backendData = res.data.data || {};
 
-                    // 构造用户信息对象，优先使用后端返回的数据
-                    const userInfo = {
-                      nickname: backendData.nickname || userProfile.nickName,
-                      avatarUrl: backendData.avatarUrl || userProfile.avatarUrl,
-                      openid: res.data.openid,
-                    };
+                  // 构造用户信息对象，优先使用后端返回的数据
+                  const userInfo = {
+                    nickname: backendData.nickname || userProfile.nickName,
+                    avatarUrl: backendData.avatarUrl || userProfile.avatarUrl,
+                    openid: res.data.openid,
+                  };
 
-                    // 保存 loginCode 到本地
-                    wx.setStorageSync('loginCode', loginRes.code);
+                  // 保存 loginCode 到本地
+                  wx.setStorageSync('loginCode', loginRes.code);
 
-                    // 保存用户信息到本地缓存
-                    wx.setStorageSync('userInfo', userInfo);
+                  // 保存用户信息到本地缓存
+                  wx.setStorageSync('userInfo', userInfo);
 
-                    // 更新页面状态
-                    this.setData({
-                      isLoggedIn: true,
-                      userInfo: userInfo,
-                      isLogging: false,
-                    });
+                  // 更新页面状态
+                  this.setData({
+                    isLoggedIn: true,
+                    userInfo: userInfo,
+                    isLogging: false,
+                  });
 
-                    wx.showToast({
-                      title: '登录成功',
-                      icon: 'success',
-                    });
-
-                    console.log('登录成功，用户信息:', userInfo);
-                  } else {
-                    this.setData({ isLogging: false });
-                    wx.showToast({
-                      title: res.data?.error || '登录失败',
-                      icon: 'none',
-                    });
-                  }
-                },
-                fail: (err) => {
-                  wx.hideLoading();
-                  this.setData({ isLogging: false });
-                  console.error('后端登录请求失败:', err);
                   wx.showToast({
-                    title: '网络错误，请重试',
+                    title: '登录成功',
+                    icon: 'success',
+                  });
+
+                  console.log('登录成功，用户信息:', userInfo);
+                } else {
+                  this.setData({ isLogging: false });
+                  wx.showToast({
+                    title: res.data?.error || '登录失败',
                     icon: 'none',
                   });
-                },
+                }
+              }).catch((err) => {
+                wx.hideLoading();
+                this.setData({ isLogging: false });
+                console.error('后端登录请求失败（所有服务器均不可用）:', err);
+                wx.showToast({
+                  title: '网络错误，请检查网络后重试',
+                  icon: 'none',
+                });
               });
             } else {
               wx.hideLoading();
@@ -484,7 +481,7 @@ Page({
     console.log('%c========================================', 'color: red; font-size: 16px; font-weight: bold;');
     console.log('%c前端发送的JSON数据', 'color: red; font-size: 16px; font-weight: bold;');
     console.log('%c========================================', 'color: red; font-size: 16px; font-weight: bold;');
-    console.log('请求URL:', `${API_BASE_URL}/api/v1/wx-submit-task`);
+    console.log('请求URL:', `${getApiBaseUrl()}/api/v1/wx-submit-task`);
     console.log('code (微信登录凭证):', loginCode);
     console.log('jobId:', jobId);
     console.log('序列数量:', sequences.length);
@@ -499,41 +496,38 @@ Page({
       title: '正在提交任务...',
     });
 
-    wx.request({
-      url: `${API_BASE_URL}/api/v1/wx-submit-task`,
+    requestWithFallback('/api/v1/wx-submit-task', {
       method: 'POST',
       header: {
         'Content-Type': 'application/json',
       },
       data: requestData,
-      success: (res) => {
-        wx.hideLoading();
+    }).then((res) => {
+      wx.hideLoading();
 
-        console.log('提交任务响应:', res);
+      console.log('提交任务响应:', res);
 
-        // Check for 202 status code and data.job_id
-        if (res.statusCode === 202 && res.data.code === 200 && res.data.data && res.data.data.job_id) {
-          const batchJobId = res.data.data.job_id;
-          console.log('任务提交成功，batch_job_id:', batchJobId);
+      // Check for 202 status code and data.job_id
+      if (res.statusCode === 202 && res.data.code === 200 && res.data.data && res.data.data.job_id) {
+        const batchJobId = res.data.data.job_id;
+        console.log('任务提交成功，batch_job_id:', batchJobId);
 
-          // 开始轮询任务进度
-          this.startPollingProgress(batchJobId);
-        } else {
-          console.error('提交任务失败:', res);
-          wx.showToast({
-            title: res.data?.message || '提交失败，请重试',
-            icon: 'none',
-          });
-        }
-      },
-      fail: (err) => {
-        wx.hideLoading();
-        console.error('提交任务失败:', err);
+        // 开始轮询任务进度
+        this.startPollingProgress(batchJobId);
+      } else {
+        console.error('提交任务失败:', res);
         wx.showToast({
-          title: '网络错误，请重试',
+          title: res.data?.message || '提交失败，请重试',
           icon: 'none',
         });
-      },
+      }
+    }).catch((err) => {
+      wx.hideLoading();
+      console.error('提交任务失败（所有服务器均不可用）:', err);
+      wx.showToast({
+        title: '网络错误，请检查网络后重试',
+        icon: 'none',
+      });
     });
   },
 
@@ -567,52 +561,49 @@ Page({
    * 查询任务进度
    */
   checkTaskProgress(batchJobId) {
-    wx.request({
-      url: `${API_BASE_URL}/api/v1/wx-task-progress/${batchJobId}`,
+    requestWithFallback(`/api/v1/wx-task-progress/${batchJobId}`, {
       method: 'GET',
       header: {
         'Content-Type': 'application/json',
       },
-      success: (res) => {
-        console.log('任务进度响应:', res);
+    }).then((res) => {
+      console.log('任务进度响应:', res);
 
-        if (res.statusCode === 200 && res.data.code === 200 && res.data.data) {
-          const data = res.data.data;
-          const status = data.status;
-          const total = data.total_sequences || 0;
-          const completed = data.completed_sequences || 0;
-          const results = data.results || [];
+      if (res.statusCode === 200 && res.data.code === 200 && res.data.data) {
+        const data = res.data.data;
+        const status = data.status;
+        const total = data.total_sequences || 0;
+        const completed = data.completed_sequences || 0;
+        const results = data.results || [];
 
-          console.log(`任务进度: ${completed}/${total}, status: ${status}`);
+        console.log(`任务进度: ${completed}/${total}, status: ${status}`);
 
-          // 更新进度条
-          this.setData({
-            progressCurrent: completed,
-            progressTotal: total,
-          });
+        // 更新进度条
+        this.setData({
+          progressCurrent: completed,
+          progressTotal: total,
+        });
 
-          // 检查是否完成
-          if (status === 'COMPLETED' || completed >= total) {
-            // 清除定时器
-            this.clearPollTimer();
+        // 检查是否完成
+        if (status === 'COMPLETED' || completed >= total) {
+          // 清除定时器
+          this.clearPollTimer();
 
-            console.log('所有任务已完成，准备跳转');
+          console.log('所有任务已完成，准备跳转');
 
-            // 延迟1秒后跳转到可视化页面
-            setTimeout(() => {
-              this.navigateToVisualization(results);
-            }, 1000);
-          }
-        } else if (res.statusCode === 404) {
-          // 任务不存在
-          console.error('任务不存在:', batchJobId);
-          this.handlePollingError('任务不存在');
+          // 延迟1秒后跳转到可视化页面
+          setTimeout(() => {
+            this.navigateToVisualization(results);
+          }, 1000);
         }
-      },
-      fail: (err) => {
-        console.error('查询任务进度失败:', err);
-        // 网络错误，继续轮询
-      },
+      } else if (res.statusCode === 404) {
+        // 任务不存在
+        console.error('任务不存在:', batchJobId);
+        this.handlePollingError('任务不存在');
+      }
+    }).catch((err) => {
+      console.error('查询任务进度失败:', err);
+      // 网络错误，继续轮询
     });
   },
 
