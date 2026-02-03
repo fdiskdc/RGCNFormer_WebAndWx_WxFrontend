@@ -2,27 +2,27 @@
   <!-- Loading State -->
   <view wx:if="{{isLoading}}" class="loading-container">
     <view class="loading-spinner"></view>
-    <text class="loading-text">结果正在计算中...</text>
-    <text class="loading-subtext">请稍候（已等待 {{pollAttempts}} 次）</text>
+    <text class="loading-text">Calculating results...</text>
+    <text class="loading-subtext">Please wait ({{pollAttempts}} attempts)</text>
   </view>
 
   <!-- Error State -->
   <view wx:if="{{!isLoading && error}}" class="error-container">
     <text class="error-icon">⚠️</text>
     <text class="error-text">{{error}}</text>
-    <button class="back-button" bindtap="onBackTap">返回</button>
+    <button class="back-button" bindtap="onBackTap">Back</button>
   </view>
 
   <!-- Results Display -->
   <view wx:if="{{!isLoading && resultDataList.length > 0}}" class="results-wrapper">
     <view class="header">
-      <text class="title">分析结果</text>
-      <text class="sequence-info" wx:if="{{resultDataList.length > 1}}">序列 {{currentResultData.index + 1}} / {{resultDataList.length}}</text>
+      <text class="title">Analysis Results</text>
+      <text class="sequence-info" wx:if="{{resultDataList.length > 1}}">Sequence {{currentResultData.index + 1}} / {{resultDataList.length}}</text>
     </view>
 
     <!-- Classification Results -->
     <view class="section" wx:if="{{currentResultData.data.classification}}">
-      <view class="section-title">分类结果</view>
+      <view class="section-title">Classification Results</view>
       <view class="hierarchy-tree">
         <!-- Nucleotide Groups with their Modifications -->
         <view class="nucleotide-group" wx:for="{{classificationTree.children}}" wx:key="nucType">
@@ -50,66 +50,66 @@
 
     <!-- Attention Results -->
     <view class="section" wx:if="{{currentResultData.data.attention}}">
-      <view class="section-title">注意力权重</view>
+      <view class="section-title">Attention Weights</view>
 
-      <!-- 无修饰检测提示 -->
+      <!-- No modification detected message -->
       <view class="no-data" wx:if="{{modificationTypeOptions.length === 0}}">
-        <text>未检测到修饰，无法显示注意力权重</text>
+        <text>No modifications detected, unable to display attention weights</text>
       </view>
 
       <view wx:else>
-        <!-- 控制区 -->
+        <!-- Control area -->
         <view class="attention-controls">
-          <!-- 修饰类型选择 -->
+          <!-- Modification type selection -->
           <view class="control-row">
-            <text class="control-label">选择修饰类型:</text>
+            <text class="control-label">Select Modification Type:</text>
             <picker class="modification-picker" mode="selector" range="{{modificationTypeOptions}}"
                     range-key="label" value="{{selectedModificationIndex}}" bindchange="onModificationTypeChange">
               <view class="picker-display">
-                {{modificationTypeOptions[selectedModificationIndex] ? modificationTypeOptions[selectedModificationIndex].label : '请选择'}}
+                {{modificationTypeOptions[selectedModificationIndex] ? modificationTypeOptions[selectedModificationIndex].label : 'Please Select'}}
               </view>
             </picker>
           </view>
 
-          <!-- TopX 控制 -->
+          <!-- TopX control -->
           <view class="control-row">
-            <text class="control-label">显示 Top </text>
+            <text class="control-label">Show Top </text>
             <input class="topx-input" type="number" value="{{topX}}" bindinput="onTopXInput" min="1" max="100" />
-            <text class="control-label"> 个位点</text>
+            <text class="control-label"> Sites</text>
           </view>
 
-          <!-- 导航按钮 -->
+          <!-- Navigation buttons -->
           <view class="nav-buttons-container">
             <button class="nav-btn" bindtap="onPrevSite" disabled="{{currentAttentionIndex === 0}}">
-              ← 上一个
+              ← Previous
             </button>
             <text class="nav-info">
               {{displayWeights.length > 0 ? currentAttentionIndex + 1 : 0}} / {{displayWeights.length}}
             </text>
             <button class="nav-btn" bindtap="onNextSite"
                     disabled="{{currentAttentionIndex >= displayWeights.length - 1}}">
-              下一个 →
+              Next →
             </button>
           </view>
         </view>
 
-        <!-- 无数据提示 -->
+        <!-- No data message -->
         <view class="no-data" wx:if="{{displayWeights.length === 0}}">
-          <text>当前筛选条件下无匹配位点</text>
+          <text>No matching sites under current filter conditions</text>
         </view>
 
-        <!-- 序列视图 -->
+        <!-- Sequence view -->
         <view wx:else class="attention-viz-container" id="attention-viz-section">
-          <!-- 当前高亮信息 -->
+          <!-- Current highlight info -->
           <view class="highlight-info" wx:if="{{currentHighlight}}">
-            <text class="highlight-label">当前高亮:</text>
+            <text class="highlight-label">Current Highlight:</text>
             <text class="highlight-value">
-              {{currentHighlight.type}} (分数: {{currentHighlight.displayScore}}},
-              位置: {{currentHighlight.index}})
+              {{currentHighlight.type}} (Score: {{currentHighlight.displayScore}}},
+              Position: {{currentHighlight.index}})
             </text>
           </view>
 
-          <!-- 序列视口 -->
+          <!-- Sequence viewport -->
           <scroll-view class="sequence-viewport" scroll-x="true" scroll-into-view="{{scrollToId}}" scroll-with-animation="{{true}}" id="sequence-viewport">
             <view class="viewport-content">
               <view id="block-{{item.index}}" class="sequence-block {{item.isHighlighted ? 'highlighted' : ''}}"
@@ -124,30 +124,30 @@
             </view>
           </scroll-view>
 
-          <!-- 统计信息 -->
+          <!-- Statistics -->
           <view class="attention-stats">
             <view class="stat-item">
-              <text class="stat-label">序列长度:</text>
+              <text class="stat-label">Sequence Length:</text>
               <text class="stat-value">{{sequence.length}}</text>
             </view>
             <view class="stat-item">
-              <text class="stat-label">总权重数据:</text>
+              <text class="stat-label">Total Weight Data:</text>
               <text class="stat-value">{{currentResultData.data.attention.weights.length}}</text>
             </view>
             <view class="stat-item">
-              <text class="stat-label">当前显示:</text>
+              <text class="stat-label">Currently Displayed:</text>
               <text class="stat-value">{{displayWeights.length}}</text>
             </view>
           </view>
 
-          <!-- 位点列表 -->
+          <!-- Sites list -->
           <view class="sites-list">
-            <view class="site-list-header">当前显示的修饰位点列表:</view>
+            <view class="site-list-header">List of Currently Displayed Modification Sites:</view>
             <view class="site-list-item" wx:for="{{displayWeights}}" wx:for-index="idx">
               <text class="site-rank">{{idx + 1}}.</text>
               <text class="site-type">{{item.type}}</text>
-              <text class="site-position">位置: {{item.index}}</text>
-              <text class="site-score">分数: {{item.displayScore}}</text>
+              <text class="site-position">Position: {{item.index}}</text>
+              <text class="site-score">Score: {{item.displayScore}}</text>
             </view>
           </view>
         </view>
@@ -156,14 +156,14 @@
 
     <!-- GCN Results -->
     <view class="section" wx:if="{{currentResultData.data.gcn}}">
-      <view class="section-title">GCN 图结构</view>
+      <view class="section-title">GCN Graph Structure</view>
       <view class="gcn-stats">
         <view class="stat-item">
-          <text class="stat-label">节点数:</text>
+          <text class="stat-label">Nodes:</text>
           <text class="stat-value">{{currentResultData.data.gcn.nodes.length}}</text>
         </view>
         <view class="stat-item">
-          <text class="stat-label">边数:</text>
+          <text class="stat-label">Edges:</text>
           <text class="stat-value">{{currentResultData.data.gcn.edges.length}}</text>
         </view>
       </view>
@@ -171,11 +171,11 @@
 
     <!-- Back Button -->
     <!-- <view class="button-container">
-      <button class="back-button" bindtap="onBackTap">返回</button>
+      <button class="back-button" bindtap="onBackTap">Back</button>
     </view> -->
   </view>
 
-  <!-- 标签页切换区域 - 底部固定 -->
+  <!-- Tab switching area - Fixed at bottom -->
   <view class="tab-bar-container" wx:if="{{resultDataList.length > 0}}">
     <scroll-view class="tab-scroll" scroll-x="true" scroll-with-animation="{{true}}">
       <view class="tab-list">
@@ -185,7 +185,7 @@
           wx:key="index"
           bindtap="onTabTap"
           data-index="{{index}}">
-          <text class="tab-text">序列 {{item.index + 1}}</text>
+          <text class="tab-text">Sequence {{item.index + 1}}</text>
           <view class="tab-indicator" wx:if="{{currentTabIndex === index}}"></view>
         </view>
       </view>

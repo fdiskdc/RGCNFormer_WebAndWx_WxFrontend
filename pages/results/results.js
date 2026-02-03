@@ -34,10 +34,10 @@ console.log('修饰名称到核苷酸映射:', MOD_NAME_TO_NUCLEOTIDE);
 
 // 每个核苷酸组包含的修饰ID (0-11，对应模型索引)
 const NUCLEOTIDE_GROUPS = {
-  'A': { name: '腺嘌呤 (A)', mods: [0, 1, 7, 9, 10] },   // Am, Atol, m1A, m6A, m6Am
-  'C': { name: '胞嘧啶 (C)', mods: [2, 6, 8] },           // Cm, ac4C, m5C
-  'G': { name: '鸟嘌呤 (G)', mods: [3, 11] },              // Gm, m7G
-  'U': { name: '尿嘧啶 (U)', mods: [4, 5] }                // Tm, Y
+  'A': { name: 'Adenine (A)', mods: [0, 1, 7, 9, 10] },   // Am, Atol, m1A, m6A, m6Am
+  'C': { name: 'Cytosine (C)', mods: [2, 6, 8] },           // Cm, ac4C, m5C
+  'G': { name: 'Guanine (G)', mods: [3, 11] },              // Gm, m7G
+  'U': { name: 'Uracil (U)', mods: [4, 5] }                // Tm, Y
 };
 
 // 莫兰迪配色方案
