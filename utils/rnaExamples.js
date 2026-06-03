@@ -1,3 +1,34 @@
+/**
+ * rnaExamples.js - RNA 序列示例库 / RNA sequence example library
+ *
+ * 提供一组硬编码的 RNA 序列示例,首页在加载时随机选一条作为默认输入,
+ * 用户可在此基础上修改或重新输入。 / Hard-coded list of RNA sequence examples.
+ * The home page picks one at random on load as a default input that the user
+ * can edit or replace.
+ *
+ * 功能模块 / Modules:
+ * - RNA_EXAMPLES: string[] - ACGTN 格式的 RNA 序列数组 / Array of ACGTN sequences
+ *
+ * 输入 / Inputs:
+ * - 无 / None
+ *
+ * 输出 / Outputs:
+ * - RNA_EXAMPLES: string[] - CommonJS 导出的序列数组 / exported sequence array
+ *
+ * 数据流 / Data Flow:
+ * 1. pages/index/index.js 引入本模块 / Imported by pages/index/index.js
+ * 2. loadRandomExample() 随机取一条填充到输入框 / Pick one at random for the input box
+ *
+ * 相关文件 / Related Files:
+ * - 调用 / Calls: 无 / None
+ * - 被调用 / Called by: pages/index/index.js(loadRandomExample) / pages/index/index.js
+ *
+ * 使用示例 / Usage Example:
+ *     const { RNA_EXAMPLES } = require('../../utils/rnaExamples');
+ *     const seq = RNA_EXAMPLES[Math.floor(Math.random() * RNA_EXAMPLES.length)];
+ *
+ * 版本 / Version: 1.0
+ */
 // rnaExamples.js
 // RNA序列示例库
 const RNA_EXAMPLES = [
