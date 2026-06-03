@@ -1,3 +1,41 @@
+/**
+ * request.js - 带主备自动切换的 HTTP 请求封装 / HTTP wrapper with primary/backup auto-failover
+ *
+ * 在 wx.request 之上做了一层封装,主服务器不可用时自动切换到备份;另提供
+ * "登录专用"通道(走可访问微信 API 的服务器)。 / Wraps wx.request with
+ * primary-to-backup server failover, plus a separate login-only channel for
+ * servers allowed to call WeChat APIs.
+ *
+ * 功能模块 / Modules:
+ * - requestWithFallback(path, options, maxRetries): 主备自动切换请求 / Failover request
+ * - requestLogin(path, options): 登录专用请求(单一服务器) / Login-only request (single server)
+ * - resetServer(): 重置服务器索引 / Reset server index for new tasks
+ * - getApiBaseUrl() / getWebBaseUrl(): 透传当前 URL / Expose current URL
+ *
+ * 输入 / Inputs:
+ * - path: string - API 路径(不含 baseUrl) / API path without baseUrl
+ * - options: object - wx.request 选项(method/header/data) / wx.request options
+ * - maxRetries: number|null - 最大重试次数,默认遍历所有服务器 / max retries, defaults to all servers
+ *
+ * 输出 / Outputs:
+ * - Promise<res>: 解析 wx.request 的响应 / Promise resolving to wx.request response
+ *
+ * 数据流 / Data Flow:
+ * 1. 从 utils/config/api 读取服务器索引与服务器列表 / Read server index & list from utils/config/api
+ * 2. 调用 wx.request;200/202/404 视为成功(任务未完成但服务器正常) / 200/202/404 count as success
+ * 3. 失败时 switchToNextServer 切到下一台并重试;耗尽则 reject / On failure switch & retry; reject when exhausted
+ *
+ * 相关文件 / Related Files:
+ * - 调用 / Calls: ./config/api(主备配置)、微信 wx.request / ./config/api, wx.request
+ * - 被调用 / Called by: pages/index/index.js、pages/results/results.js / pages/index/index.js, pages/results/results.js
+ *
+ * 使用示例 / Usage Example:
+ *     const { requestWithFallback, requestLogin } = require('../../utils/request');
+ *     requestWithFallback('/api/v1/wx-submit-task', { method: 'POST', data: payload })
+ *       .then(res => console.log(res.data));
+ *
+ * 版本 / Version: 1.0
+ */
 // utils/request.js
 // 带主备自动切换的请求封装
 
