@@ -1,3 +1,40 @@
+/**
+ * results.js - 结果展示页(模型预测与注意力可视化) / Results page (model prediction & attention viz)
+ *
+ * 接收首页传来的批量结果(或单 jobId),拉取完整数据后展示 12 类 RNA 修饰的
+ * 分类预测,并提供按修饰类型筛选的注意力权重可视化(局部序列视口)。 / Receives
+ * batch results (or a single jobId) from home, fetches full data, displays 12-class
+ * RNA modification predictions, and renders attention-weight visualizations with a
+ * per-modification filter and local sequence viewport.
+ *
+ * 功能模块 / Modules:
+ * - 加载(loadBatchResults / fetchSingleResult / pollForResult): 批量或单 jobId 加载 / batch or single loading
+ * - 分类树(transformClassificationToTree): 将后端 classification 转为按 A/C/G/U 分组 / group by nucleotide
+ * - 注意力可视化(updateDisplayWeights / updateViewport): 按修饰类型过滤,渲染 ±25 视口 / filter by mod, render viewport
+ * - 导航(navigateToWebView / onBackTap): 跳 webview / 返回 / navigate to webview or go back
+ *
+ * 输入 / Inputs:
+ * - options.results: string - URL-encode 后的批量结果 JSON / URL-encoded batch results JSON
+ * - options.jobId: string - 单任务模式下的 jobId / jobId in single-task mode
+ *
+ * 输出 / Outputs:
+ * - 页面渲染(分类树、注意力视口、TopX 列表) / page render (tree, viewport, top-X list)
+ *
+ * 数据流 / Data Flow:
+ * 1. onLoad 解析 options.results 或 options.jobId / Parse options in onLoad
+ * 2. 重置服务器、拉取/解析数据,初始化当前结果 / Reset server, fetch/parse, init current result
+ * 3. 用户切换修饰类型或 TopX 时,updateDisplayWeights → updateViewport 重绘 / Switching mod type or TopX triggers re-render
+ *
+ * 相关文件 / Related Files:
+ * - 调用 / Calls: ../../utils/request、../../utils/request.getWebBaseUrl、wx.* API
+ * - 被调用 / Called by: pages/index/index.js(提交完成时跳转)、pages/webview/index.js / pages/index/index.js, pages/webview/index.js
+ *
+ * 使用示例 / Usage Example:
+ *     // 由 pages/index/index.js 通过 wx.navigateTo 跳转
+ *     wx.navigateTo({ url: '/pages/results/results?results=' + encodeURIComponent(json) });
+ *
+ * 版本 / Version: 1.0
+ */
 // 请求封装（支持主备服务器切换）
 const { requestWithFallback, resetServer, getWebBaseUrl } = require('../../utils/request');
 
