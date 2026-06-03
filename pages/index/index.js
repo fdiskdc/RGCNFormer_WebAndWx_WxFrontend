@@ -1,3 +1,39 @@
+/**
+ * index.js - 首页(序列输入与提交) / Home page (sequence input & submit)
+ *
+ * 小程序首页:RNA 序列输入(最多 5 条)、登录/登出、提交任务到后端并轮询进度,
+ * 提交成功后跳转到 results 页。 / Mini-program home: up to 5 RNA sequences, login/logout,
+ * submit task to backend and poll progress, then navigate to results page.
+ *
+ * 功能模块 / Modules:
+ * - 登录(onLoginTap / onLogoutTap): 微信授权 + 后端登录,持久化 userInfo / WeChat auth + backend login
+ * - 序列管理(onAddSequence / onDeleteSequence / onSequenceInput): 增删与字符过滤(A/C/G/U/T/N) / Add/remove & char filter
+ * - 校验(validateRNASequence): 长度≥51 且仅含 ATCGUN / length≥51, chars in ATCGUN
+ * - 提交与轮询(submitTask / startPollingProgress): 提交任务并轮询进度 / Submit & poll
+ * - 跳转(navigateToVisualization): 完成后跳 results / Navigate to results when done
+ *
+ * 输入 / Inputs:
+ * - rnaSequences: Array<{value: string}> - 用户输入的序列 / user-entered sequences
+ * - options.url ?results=... : 上一页面传来的批量结果 / batch results from previous page
+ *
+ * 输出 / Outputs:
+ * - 页面渲染 / 网络请求副作用(提交任务、轮询进度) / page render / network side effects
+ *
+ * 数据流 / Data Flow:
+ * 1. onLoad 重置服务器索引、加载随机示例、检查登录态 / Reset server, load example, check login
+ * 2. 用户输入序列后点击提交,生成 jobId,POST /api/v1/wx-submit-task / Generate jobId, POST task
+ * 3. 成功获得 batchJobId 后每 2 秒 GET 进度,完成则 navigateTo results / Poll every 2s, navigate on done
+ *
+ * 相关文件 / Related Files:
+ * - 调用 / Calls: ../../utils/rnaExamples、../../utils/request、wx.* API
+ * - 被调用 / Called by: 微信小程序框架(用户从首页进入) / WeChat framework
+ *
+ * 使用示例 / Usage Example:
+ *     // 该文件由微信框架加载,无外部调用方 / Loaded by WeChat framework
+ *     // 跳转: wx.navigateTo({ url: '/pages/results/results?results=...' })
+ *
+ * 版本 / Version: 1.0
+ */
 // index.js
 const defaultAvatarUrl = 'https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG0LAJGFxM4FbnQP6yfMxBgJ0F3YRqJCJ1aPAK2dQagdusBZg/0'
 
