@@ -52,6 +52,24 @@
     <view class="section" wx:if="{{currentResultData.data.attention}}">
       <view class="section-title">Attention Weights</view>
 
+      <view class="attention-mode-switch">
+        <view
+          class="attention-mode-option {{attentionViewMode === 'sites' ? 'active' : ''}}"
+          data-mode="sites"
+          bindtap="onAttentionViewModeChange"
+        >
+          重点位点
+        </view>
+        <view
+          class="attention-mode-option {{attentionViewMode === 'distribution' ? 'active' : ''}}"
+          data-mode="distribution"
+          bindtap="onAttentionViewModeChange"
+        >
+          注意力分布
+        </view>
+      </view>
+
+      <view wx:if="{{attentionViewMode === 'sites'}}">
       <!-- No modification detected message -->
       <view class="no-data" wx:if="{{modificationTypeOptions.length === 0}}">
         <text>No modifications detected, unable to display attention weights</text>
@@ -152,6 +170,13 @@
           </view>
         </view>
       </view>
+      </view>
+
+      <attention-distribution
+        wx:if="{{attentionViewMode === 'distribution'}}"
+        job-id="{{currentResultData.jobId}}"
+        active="{{attentionViewMode === 'distribution'}}"
+      />
     </view>
 
     <!-- GCN Results -->

@@ -1,0 +1,135 @@
+.distribution-component {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.distribution-state {
+  min-height: 32vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8% 4%;
+  box-sizing: border-box;
+  color: #666666;
+}
+
+.distribution-spinner {
+  width: 54rpx;
+  height: 54rpx;
+  border: 6rpx solid #e5e5e5;
+  border-top-color: #8b9daa;
+  border-radius: 50%;
+  animation: distribution-spin 1s linear infinite;
+  margin-bottom: 24rpx;
+}
+
+@keyframes distribution-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.state-text,
+.error-text {
+  font-size: 26rpx;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.error-text {
+  color: #b75d5d;
+}
+
+.retry-button {
+  margin-top: 24rpx;
+  padding: 0 34rpx;
+  height: 64rpx;
+  line-height: 64rpx;
+  border-radius: 8rpx;
+  background-color: #8b9daa;
+  color: #ffffff;
+  font-size: 26rpx;
+}
+
+.retry-button::after {
+  border: 0;
+}
+
+.distribution-controls {
+  padding: 20rpx 22rpx;
+  background-color: #f6f6f4;
+  border-radius: 8rpx;
+  box-sizing: border-box;
+}
+
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+}
+
+.control-label {
+  flex-shrink: 0;
+  color: #555555;
+  font-size: 26rpx;
+}
+
+.class-picker {
+  flex: 1;
+  min-width: 0;
+}
+
+.picker-display {
+  padding: 16rpx 20rpx;
+  background-color: #ffffff;
+  border: 1rpx solid #d8d8d4;
+  border-radius: 8rpx;
+  color: #4a4a4a;
+  font-size: 26rpx;
+  box-sizing: border-box;
+}
+
+.summary-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14rpx 24rpx;
+  margin-top: 18rpx;
+}
+
+.summary-name {
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.summary-value {
+  font-size: 24rpx;
+  color: #666666;
+}
+
+.chart-surface {
+  width: 100%;
+  margin-top: 20rpx;
+  background-color: #fafaf8;
+  border: 1rpx solid #ecece8;
+  border-radius: 8rpx;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.distribution-canvas {
+  display: block;
+  width: 100%;
+  height: 420rpx;
+}
+
+.range-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12rpx 20rpx;
+  padding: 16rpx 4rpx 0;
+  color: #777777;
+  font-size: 23rpx;
+}

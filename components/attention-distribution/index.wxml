@@ -1,0 +1,52 @@
+<view class="distribution-component">
+  <view wx:if="{{loading}}" class="distribution-state">
+    <view class="distribution-spinner"></view>
+    <text class="state-text">正在加载注意力分布...</text>
+  </view>
+
+  <view wx:elif="{{error}}" class="distribution-state">
+    <text class="error-text">{{error}}</text>
+    <button class="retry-button" bindtap="onRetry">重试</button>
+  </view>
+
+  <view wx:elif="{{classOptions.length === 0}}" class="distribution-state">
+    <text class="state-text">没有预测到可展示的修饰类型</text>
+  </view>
+
+  <view wx:else>
+    <view class="distribution-controls">
+      <view class="control-row">
+        <text class="control-label">修饰类型</text>
+        <picker
+          class="class-picker"
+          mode="selector"
+          range="{{classOptions}}"
+          range-key="label"
+          value="{{selectedClassIndex}}"
+          bindchange="onClassChange"
+        >
+          <view class="picker-display">
+            {{classOptions[selectedClassIndex].label}}
+          </view>
+        </picker>
+      </view>
+
+      <view class="summary-row" wx:if="{{currentClassSummary}}">
+        <text class="summary-name" style="color: {{currentClassSummary.color}};">
+          {{currentClassSummary.name}}
+        </text>
+        <text class="summary-value">P = {{currentClassSummary.probabilityText}}</text>
+        <text class="summary-value">阈值 = {{currentClassSummary.thresholdText}}</text>
+      </view>
+    </view>
+
+    <view class="chart-surface">
+      <canvas type="2d" id="attention-distribution-canvas" class="distribution-canvas"></canvas>
+    </view>
+
+    <view class="range-row">
+      <text>序列长度：{{sequenceLength}}</text>
+      <text>建模范围：{{modeledRangeText}}</text>
+    </view>
+  </view>
+</view>

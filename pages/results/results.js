@@ -102,6 +102,7 @@ Page({
     currentTabIndex: 0,         // 当前选中的标签索引
 
     // 注意力可视化相关
+    attentionViewMode: 'sites',
     topX: 3,
     currentAttentionIndex: 0,
     selectedModificationType: '',
@@ -386,6 +387,15 @@ Page({
       // 所有服务器都失败，停止轮询
       this.handlePollError('网络连接失败，请检查网络后重试');
     });
+  },
+
+  /**
+   * 切换注意力可视化模式
+   */
+  onAttentionViewModeChange(e) {
+    const mode = e.currentTarget.dataset.mode;
+    if (mode !== 'sites' && mode !== 'distribution') return;
+    this.setData({ attentionViewMode: mode });
   },
 
   /**

@@ -1,5 +1,7 @@
 node_modules
 miniprogram_npm
 .cloudbase
-components
+components/*
+!components/attention-distribution/
+!components/attention-distribution/**
 other

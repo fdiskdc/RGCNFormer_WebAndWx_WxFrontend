@@ -201,6 +201,32 @@
   border-left: 0.25em solid #07c160;
 }
 
+.attention-mode-switch {
+  display: flex;
+  width: 100%;
+  margin-bottom: 3%;
+  padding: 0.8vw;
+  background-color: #f0eff0;
+  border-radius: 0.6em;
+  box-sizing: border-box;
+}
+
+.attention-mode-option {
+  flex: 1;
+  padding: 2.2vw 1vw;
+  border-radius: 0.45em;
+  color: #7b7b7b;
+  font-size: 0.88em;
+  text-align: center;
+}
+
+.attention-mode-option.active {
+  background-color: #ffffff;
+  color: #526575;
+  font-weight: 600;
+  box-shadow: 0 0.3vw 1vw rgba(80, 94, 105, 0.12);
+}
+
 .section-subtitle {
   font-size: 0.85em;
   font-weight: bold;
